@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}"{% if LANGUAGE_BIDI %} dir="rtl"{% endif %}>
+{% load pages_tags mezzanine_tags i18n future staticfiles adept_tags blog_tags %}
+<head>
+
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta name="keywords" content="{% block meta_keywords %}{% endblock %}">
+    <meta name="description" content="{% block meta_description %}{% endblock %}">
+    <title>{% block meta_title %}{% endblock %}{% if settings.SITE_TITLE %} | {{ settings.SITE_TITLE }}{% endif %}</title>
+    <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
+
+    {% ifinstalled mezzanine.blog %}
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="{% url "blog_post_feed" "rss" %}">
+    <link rel="alternate" type="application/atom+xml" title="Atom" href="{% url "blog_post_feed" "atom" %}">
+    {% endifinstalled %}
+
+    {% compress css %}
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static "assets/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
+    <!-- Plugins CSS -->
+    <link href="{% static "assets/UItoTop/css/ui.totop.css" %}" rel="stylesheet">
+    <link href="{% static "assets/prettyPhoto/css/prettyPhoto.css" %}" rel="stylesheet">
+    <!-- REVOLUTION BANNER CSS SETTINGS -->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/rs-plugin/css/settings.css" %}" media="screen" />
+    <!-- Custom Stylesheet For This Template -->
+    <link href="{% static "assets/css/stylesheet.css" %}" rel="stylesheet">
+    <link href="{% static "assets/css/skins.css" %}" rel="stylesheet">
+    <link href="{% static "css/mezzatheme.css" %}" rel="stylesheet">
+    <!-- Font Awesome  -->    
+    <link href="{% static "assets/font-awesome-4.0.3/css/font-awesome.css" %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    {% endcompress %}
+
+    <!-- Google Fonts -->    
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic|Montserrat:400,700' rel='stylesheet' type='text/css'>
+
+    <script>
+        var item_template = '<li><a href="{% templatetag openvariable %}image_b{% templatetag closevariable %}"><img src="{% templatetag openvariable %}image_s{% templatetag closevariable %}" alt="{% templatetag openvariable %}title{% templatetag closevariable %}" /></a></li>'
+    </script>
+
+    {% compress js %}
+    <script src="{% static "assets/js/jquery-2.0.3.min.js" %}"></script>
+    <script src="{% static "assets/js/jquery-migrate-1.2.1.min.js" %}"></script>
+    <script src="{% static "assets/bootstrap/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "assets/rs-plugin/js/jquery.themepunch.revolution.min.js" %}"></script>
+    <script src="{% static "assets/carouFredSel-6.2.1/jquery.carouFredSel-6.2.1.js" %}"></script>
+    <script src="{% static "assets/prettyPhoto/js/jquery.prettyPhoto.js" %}"></script>
+    <script src="{% static "assets/jflickrfeed/jflickrfeed.min.js" %}"></script>
+    <script src="{% static "assets/UItoTop/js/easing.js" %}"></script>
+    <script src="{% static "assets/UItoTop/js/jquery.ui.totop.min.js" %}"></script>
+    <script src="{% static "assets/FitVids.js/jquery.fitvids.js" %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function($){
+            var $dropdowns = $('li.dropdown'); // Specifying the element is faster for older browsers
+            /**
+             * Mouse events
+             *
+             * @description Mimic hoverIntent plugin by waiting for the mouse to 'settle' within the target before triggering
+             */
+            $dropdowns
+                .on('mouseover', function() // Mouseenter (used with .hover()) does not trigger when user enters from outside document window
+                {
+                    var $this = $(this);
+                    if ($this.prop('hoverTimeout'))
+                    {
+                        $this.prop('hoverTimeout', clearTimeout($this.prop('hoverTimeout')));
+                    }
+                    $this.prop('hoverIntent', setTimeout(function()
+                    {
+                        $this.addClass('open');
+                    }, 250));
+                })
+                .on('mouseleave', function()
+                {
+                    var $this = $(this);
+                    if ($this.prop('hoverIntent'))
+                    {
+                        $this.prop('hoverIntent', clearTimeout($this.prop('hoverIntent')));
+                    }
+                    $this.prop('hoverTimeout', setTimeout(function()
+                    {
+                        $this.removeClass('open');
+                    }, 250));
+                });
+            /**
+             * Touch events
+             *
+             * @description Support click to open if we're dealing with a touchscreen
+             */
+            if ('ontouchstart' in document.documentElement)
+            {
+                $dropdowns.each(function()
+                {
+                    var $this = $(this);
+                    this.addEventListener('touchstart', function(e)
+                    {
+                        if (e.touches.length === 1)
+                        {
+                            // Prevent touch events within dropdown bubbling down to document
+                            e.stopPropagation();
+                            // Toggle hover
+                            if (!$this.hasClass('open'))
+                            {
+                                // Prevent link on first touch
+                                if (e.target === this || e.target.parentNode === this)
+                                {
+                                    e.preventDefault();
+                                }
+                                // Hide other open dropdowns
+                                $dropdowns.removeClass('open');
+                                $this.addClass('open');
+
+                                // Hide dropdown on touch outside
+                                document.addEventListener('touchstart', closeDropdown = function(e)
+                                {
+                                    e.stopPropagation();
+
+                                    $this.removeClass('open');
+                                    document.removeEventListener('touchstart', closeDropdown);
+                                });
+                            }
+                        }
+                    }, false);
+                });
+            }
+        });
+        $(document).ready(function () {
+            // PrettyPhoto
+            $("a[rel^='prettyPhoto']").prettyPhoto({
+                theme: 'light_square',
+                social_tools: false
+            });
+            // FitVids
+            $(".responsive-video-wrapper").fitVids();
+            {% if settings.FLICKR_ID %}
+            // jflickrfeed
+            $('.flickr-photos-list').jflickrfeed({
+                limit: 9,
+                qstrings: {
+                    id: '{{ settings.FLICKR_ID }}'
+                },
+                itemTemplate: item_template
+            });
+            {% endif %}
+            // jQuery UItoTop
+            $().UItoTop({ easingType: 'easeOutQuart' });
+            // Skin Chooser
+            $(".color-skin").click(function () {
+                var cls = this.id;
+                $(".color-skin").removeClass("active");
+                $(this).addClass("active");
+                $("#main-wrapper").removeClass();
+                $("#main-wrapper").addClass(cls);
+            });
+        });
+        // jQuery CarouFredSel
+        var caroufredsel = function () {
+            $('#caroufredsel-portfolio-container').carouFredSel({
+                responsive: true,
+                scroll: 1,
+                circular: false,
+                infinite: false,
+                items: {
+                    visible: {
+                        min: 1,
+                        max: 3
+                    }
+                },
+                prev: '#portfolio-prev',
+                next: '#portfolio-next',
+                auto: {
+                    play: false
+                }
+            });
+            $('#caroufredsel-blog-posts-container').carouFredSel({
+                responsive: true,
+                scroll: 1,
+                circular: false,
+                infinite: false,
+                items: {
+                    visible: {
+                        min: 1,
+                        max: 3
+                    }
+                },
+                prev: '#blog-posts-prev',
+                next: '#blog-posts-next',
+                auto: {
+                    play: false
+                }
+            });
+            $('#caroufredsel-clients-container').carouFredSel({
+                responsive: true,
+                scroll: 1,
+                circular: false,
+                infinite: false,
+                items: {
+                    visible: {
+                        min: 1,
+                        max: 4
+                    }
+                },
+                prev: '#client-prev',
+                next: '#client-next',
+                auto: {
+                    play: false
+                }
+            });
+        };
+        $(window).load(function () {
+            caroufredsel();
+        });
+        $(window).resize(function () {
+            caroufredsel();
+        });   
+    </script>
+    {% block extra_js %}{% endblock %}
+    {% endcompress %}
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="{% static "assets/js/html5shiv.js" %}"></script>
+    <script src="{% static "assets/js/respond.min.js" %}"></script>
+    <![endif]-->
+
+    {% block extra_head %}{% endblock %}
+
+</head>
+<body id="{% block body_id %}body{% endblock %}">
+{% blog_recent_posts 6 as recent_posts %}
+{% get_site_conf as siteconf %}
+<div id="main-wrapper" class="color-skin-{{ siteconf.color_scheme }}">
+    <header id="header-1" class="header">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-8 header-info-wrapper">
+                    <ul class="list-inline">
+                        {% if settings.SOCIAL_PHONE %}
+                        <li><i class="fa fa-phone fa-lg"></i> {{ settings.SOCIAL_PHONE }}</li>
+                        {% endif %}
+                        {% if settings.SOCIAL_EMAIL %}
+                        <li><i class="fa fa-envelope"></i> <a href="mailto:{{ settings.SOCIAL_EMAIL }}">{{ settings.SOCIAL_EMAIL }}</a></li>
+                        {% endif %}
+                        {% if request.user|can_view_help %}<li><span class="theme-help" data-toggle="tooltip" data-placement="right" data-trigger="manual" title="Edit these in Site -> Settings in the admin"></span></li>{% endif %}
+
+                    </ul>
+                    <!-- /.list-inline -->
+                </div>
+                <!-- /.header-info-wrapper -->
+                <div class="col-xs-12 col-sm-4 social-link-wrapper">
+                    <ul class="social-links">
+                        {% if request.user|can_view_help %}<li><span class="theme-help" data-toggle="tooltip" data-placement="left" data-trigger="manual" title="Edit these in Site -> Settings in the admin"></span></li>{% endif %}
+
+                        {% if settings.SOCIAL_LINK_FACEBOOK %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_FACEBOOK }}"><i class="fa fa-facebook"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_GOOGLE %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_GOOGLE }}"><i class="fa fa-google-plus"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_TWITTER %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_TWITTER }}"><i class="fa fa-twitter"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_PINTEREST %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_PINTEREST }}"><i class="fa fa-pinterest"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_LINKEDIN %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_LINKEDIN }}"><i class="fa fa-linkedin"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_DRIBBBLE %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_DRIBBBLE }}"><i class="fa fa-dribbble"></i></a></li>
+                        {% endif %}
+                    </ul>
+                    <!-- /.social-links -->
+                </div>
+                <!-- /.social-link-wrapper -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </header>
+    <!-- /.header-1 -->
+    <header id="header-2" class="header">
+        <nav class="navbar navbar-default" role="navigation">
+            <div class="container">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="fa fa-bars"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">{{ settings.SITE_TITLE|slice:":3" }}<span>{{ settings.SITE_TITLE|slice:"3:" }}.</span>
+                    {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="right" data-trigger="manual" title="The Site Title from Site -> Settings in the admin shows here."></span>{% endif %}
+                    </a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse navbar-ex1-collapse">
+                    {% page_menu "pages/menus/dropdown.html" %}
+                    <!-- /.nav -->
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container -->
+        </nav>
+        <!-- /.navbar -->
+    </header>
+    <!-- /#header-2 -->
+
+    {% block all_content %}
+    <section id="page-title-wrapper" class="section page-title-wrapper">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6 col-md-6 page-title">
+                    <h4>{% block title %}{% endblock %}</h4>
+                </div>
+                <!-- /.page-title -->
+                <div class="col-xs-6 hidden-xs breadcrumb-wrapper">
+                    <ol class="breadcrumb pull-right">
+                        {% page_menu "pages/menus/breadcrumb.html" %}
+                    </ol>
+                </div>
+                <!-- /.breadcrumb-wrapper -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#page-title-wrapper -->
+    {% block before_main %}{% endblock %}
+    <section class="section {% block main_section_class %}{% endblock %}">
+        <div class="container">
+            {% block main_sidebar_wrapper %}
+            <div class="row">
+                <div class="col-md-9{% if siteconf.sidebar_alignment == 'LE' %} col-md-push-3{% endif %} content-wrapper">
+                    {% block main %}{% endblock %}
+                </div>
+                <div class="col-md-3{% if siteconf.sidebar_alignment == 'LE' %} col-md-pull-9{% endif %} sidebar{% if request.user|can_view_help %} theme-help{% endif %}"{% if request.user|can_view_help %} data-toggle="tooltip" data-placement="top" data-trigger="manual" title="You can set the alignment of this sidebar in Content -> Site configuration or by using the edit tag."{% endif %}>
+                    {% editable siteconf.sidebar_alignment %}
+                    <div class="widget search">
+                        <form action="{% url "search" %}" class="search-form">
+                        <input class="form-control" placeholder="{% trans "Search" %}" type="text" name="q" value="{{ request.REQUEST.q }}">
+                        </form>
+                    </div>
+                    {% endeditable %}
+                    {% block sidebar %}
+                    {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="left" data-trigger="manual" title="You can update this content by going to Content -> Site Configuration in the admin or by using the edit tag."></span>{% endif %}
+                    {% editable siteconf.default_sidebar %}
+                    {{ siteconf.default_sidebar|safe }}
+                    {% endeditable %}
+                    {% endblock %}
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+    </section>
+    {% endblock %}
+
+    <footer id="footer-1" class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="widget about-us">
+                        {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title="The Site Title from Site -> Settings in the admin shows here."></span>{% endif %}
+                        <span class="footer-brand">{{ settings.SITE_TITLE|slice:":3" }}<span>{{ settings.SITE_TITLE|slice:"3:" }}.</span></span>
+                        {% editable siteconf.footer_description %}
+                        {{ siteconf.footer_description|richtext_filters|safe }}
+                        {% endeditable %}
+                    </div>
+                    <!-- /.about-us -->
+                </div>
+                <!-- /.col-md-3 -->
+                <div class="col-md-3">
+                    <div class="widget popular-posts">
+                        {% editable siteconf.footer_blog_heading %}
+                        <h5 class="subpage-title">{{ siteconf.footer_blog_heading }}</h5>
+                        {% endeditable %}
+                        {% if recent_posts %}
+                        <ul class="recent-posts">
+                            {% for blog_post in recent_posts|slice:":3" %}
+                            <li>
+                                {% if blog_post.featured_image %}
+                                <img src="{{ MEDIA_URL }}{% thumbnail blog_post.featured_image 128 128 %}" alt="Post Image">
+                                {% endif %}
+                                <h5>
+                                    <a href="{{ blog_post.get_absolute_url }}">{{ blog_post.title }}</a>
+                                    <small>{% trans "Posted" %} {{ blog_post.publish_date|date:"F j, Y" }}</small>
+                                </h5>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>We haven't posted anything yet, check back soon</p>
+                        {% endif %}
+                    </div>
+                    <!-- /.popular-posts -->
+                </div>
+                <!-- /.col-md-3 -->
+                <div class="col-md-3">
+                    <div class="widget tagcloud">
+                        {% editable siteconf.footer_menu_heading %}
+                        <h5 class="subpage-title">{{ siteconf.footer_menu_heading }}</h5>
+                        {% endeditable %}
+                        {% if request.user|can_view_help %}<div class="text-center"><span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title='Mark pages as "Popular pages (show in footer)" to have them show here.'></span></div>{% endif %}
+                        <ul class="tagcloud-list">
+                            {% page_menu "pages/menus/flat_footer.html" %}
+                        </ul>
+                    </div>
+                    <!-- /.tagcloud -->
+                </div>
+                <!-- /.col-md-3 -->
+                <div class="col-md-3">
+                    <div class="widget flickr-photos">
+                        {% editable siteconf.footer_flickr_heading siteconf.footer_flickr_content %}
+                        <h5 class="subpage-title">{{ siteconf.footer_flickr_heading }}</h5>
+                        {% endeditable %}
+                        {% if siteconf.footer_flickr_content %}
+                        {{ siteconf.footer_flickr_content|richtext_filters|safe }}
+                        {% elif settings.FLICKR_ID %}
+                        {% if request.user|can_view_help %}<div class="text-center"><span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title="Set your Flickr id in Site -> Settings in the admin."></span></div>{% endif %}
+                        <ul class="flickr-photos-list"></ul>
+                        {% endif %}
+                    </div>
+                    <!-- /.flickr-photos -->
+                </div>
+                <!-- /.col-md-3 -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </footer>
+    <!-- /#footer-1 -->
+    <footer id="footer-2" class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6 footer-info-wrapper">
+                    <span>{{ settings.SITE_TITLE }} &copy; {% now "Y" %}. Made with <a target="_blank" href="http://mezzathe.me">MEZZaTHEME</a></span>                        
+                </div>
+                <!-- /.footer-info-wrapper -->
+                <div class="col-xs-12 col-sm-6 social-link-wrapper">
+                    <ul class="social-links">
+                        {% if request.user|can_view_help %}<li><span class="theme-help" data-toggle="tooltip" data-placement="left" data-trigger="manual" title="Edit these in Site -> Settings in the admin"></span></li>{% endif %}
+                        {% if settings.SOCIAL_LINK_FACEBOOK %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_FACEBOOK }}"><i class="fa fa-facebook"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_GOOGLE %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_GOOGLE }}"><i class="fa fa-google-plus"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_TWITTER %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_TWITTER }}"><i class="fa fa-twitter"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_PINTEREST %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_PINTEREST }}"><i class="fa fa-pinterest"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_LINKEDIN %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_LINKEDIN }}"><i class="fa fa-linkedin"></i></a></li>
+                        {% endif %}
+                        {% if settings.SOCIAL_LINK_DRIBBBLE %}
+                        <li><a target="_blank" href="{{ settings.SOCIAL_LINK_DRIBBBLE }}"><i class="fa fa-dribbble"></i></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <!-- /.social-link-wrapper -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </footer>
+    <!-- /#footer-2 -->
+
+    {% if request.user|can_view_help %}
+    {% include "includes/color_picker.html" %}
+    {% endif %}
+
+</div>
+<!-- /#main-wrapper -->
+
+{% include "includes/footer_scripts.html" %}
+
+</body>
+</html>

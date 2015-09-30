@@ -1,0 +1,289 @@
+{% extends "pages/page.html" %}
+
+{% load mezzanine_tags static adept_tags %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Revolution Slider
+    if ($.fn.cssOriginal != undefined)
+        $.fn.css = $.fn.cssOriginal;
+    $('.fullwidthbanner').revolution({
+        delay: 9000,
+        startwidth: 1200,
+        startheight: 400,
+
+        onHoverStop: "on",
+
+        thumbWidth: 100,
+        thumbHeight: 50,
+        thumbAmount: 3,
+
+        hideThumbs: 0,
+
+        navigationType: "none",
+        navigationArrows: "solo",
+        navigationStyle: "round",
+        navigationHAlign: "left",
+        navigationVAlign: "bottom",
+        navigationHOffset: 30,
+        navigationVOffset: 30,
+
+        soloArrowLeftHalign: "left",
+        soloArrowLeftValign: "center",
+        soloArrowLeftHOffset: 20,
+        soloArrowLeftVOffset: 0,
+
+        soloArrowRightHalign: "right",
+        soloArrowRightValign: "center",
+        soloArrowRightHOffset: 20,
+        soloArrowRightVOffset: 0,
+
+        stopAtSlide: -1,
+        stopAfterLoops: -1,
+        hideCaptionAtLimit: 0,
+        hideAllCaptionAtLilmit: 0,
+        hideSliderAtLimit: 0,
+
+        fullWidth: "on",
+        fullScreen: "off",
+        fullScreenOffsetContainer: "#topheader-to-offset",
+
+        shadow: 0
+    });
+});
+</script>
+{% endblock %}
+
+{% block all_content %}
+    {% if homepage.slides.all %}
+    <section id="fullwidthbanner-container" class="section fullwidthbanner-container">
+        <div class="fullwidthbanner">
+            <ul>
+                {% for slide in homepage.slides.all %}
+                {% if slide.custom %}
+                    {{ slide.custom|safe }}
+                {% else %}
+                <li data-transition="boxslide" data-slotamount="10" data-masterspeed="300">
+                    <img src="{{ MEDIA_URL }}{{ slide.background }}" alt="Slide Image">
+                    <div class="tp-caption modern_medium_fat sft stt"
+                        data-x="145"
+                        data-y="75"
+                        data-speed="300"
+                        data-start="2000"
+                        data-easing="easeOutExpo">{{ slide.heading }}</div>
+                    <div class="tp-caption theme_caption2 lft ltt"
+                        data-x="145"
+                        data-y="115"
+                        data-speed="300"
+                        data-start="2200"
+                        data-easing="easeOutExpo">{{ slide.subheading }}</div>
+                    <div class="tp-caption theme_caption3 lfl ltl"
+                        data-x="145"
+                        data-y="170"
+                        data-speed="600"
+                        data-start="2400"
+                        data-easing="easeOutExpo">
+                        {{ slide.content|safe }}<br><br>
+                        {% if slide.button_text %}
+                        <div class="caption btn btn-flat flat-color sfb stb">
+                            <a href="{{ slide.button_link }}" class="">{{ slide.button_text }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="caption lfr ltr"
+                        data-x="685"
+                        data-y="0"
+                        data-speed="300"
+                        data-start="3000"
+                        data-easing="easeOutExpo"><img src="{{ MEDIA_URL }}{{ slide.image }}" alt="Slide Image"></div>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+            <div class="tp-bannertimer tp-bottom"></div>
+        </div>
+        <!-- /.fullwidthbanner -->
+    </section>
+    <!-- /.fullwidthbanner-container -->
+    {% endif %}
+    {% if homepage.boxes.all %}
+    <section id="our-services" class="section">
+        <div class="container">
+            {% editable homepage.icon_box_layout %}
+            {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title="Edit the layout of these boxes in the admin, or using front end edit tags"></span>{% endif %}
+            <div class="row">
+                {% for box in homepage.boxes.all %}
+                <div class="col-xs-12{% if homepage.icon_box_layout != 'TW' %} col-sm-4{% else %} col-sm-6{% endif %} wrapper-1">
+                    <div class="service{% if homepage.icon_box_layout == 'TH' %} service-3{% elif homepage.icon_box_layout == 'TW' %} service-4{% endif %}">
+                        {% editable box.icon box.title box.content box.link %}
+                        {% if box.link %}<a class="inherit-color" href="{{ box.link }}">{% endif %}
+                            <span class="service-icon">
+                                <i class="fa {{ box.icon }}"></i>
+                            </span>
+                            <h4>{{ box.title }}</h4>
+                            {{ box.content|richtext_filters|safe }}
+                        {% if box.link %}</a>{% endif %}
+                        {% endeditable %}
+                    </div>
+                </div>
+                {% endfor %}                     
+            </div>
+            <!-- /.row -->
+            {% endeditable %}
+            
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#our-services -->
+    {% endif %}
+    {% if homepage.featured_portfolio_heading and items %}
+    <section id="recent-works" class="section colored-wrapper">
+        <div class="container wrapper-2">
+            {% editable homepage.featured_portfolio_heading %}
+            {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title="Click the edit tag or open the home page in the admin to select which portfolio to show here"></span>{% endif %}
+
+            <h5 class="subpage-title">
+                <span>{{ homepage.featured_portfolio_heading }}</span>
+                <!-- Controls -->
+                <span id="portfolio-next" class="next black"><i class="fa fa-angle-right"></i></span>
+                <span id="portfolio-prev" class="prev black"><i class="fa fa-angle-left"></i></span>
+            </h5>
+            {% endeditable %}
+            <div class="row">
+                <div id="caroufredsel-portfolio-container">
+                    {% for item in items %}
+                    <div class="col-xs-12 col-sm-6 col-md-4 portfolio-item-wrapper">
+                        <div class="portfolio-item">
+                            {% if item.featured_video %}
+                            <div class="responsive-video-wrapper">
+                                {{ item.featured_video|safe }}
+                            </div>
+                            {% elif item.featured_image %}
+                            <div class="portfolio-thumb">
+                                <img src="{{ MEDIA_URL }}{% thumbnail item.featured_image 290 163 %}" class="img-responsive" alt="{{ item.title }}">
+                                <div class="image-overlay"></div>
+                                <a href="{{ MEDIA_URL }}{% thumbnail item.featured_image 900 0 %}" rel="prettyPhoto[pp_gal]"  class="portfolio-zoom"><i class="fa fa-eye"></i></a>
+                                <a href="{{ item.get_absolute_url }}" class="portfolio-link"><i class="fa fa-link"></i></a>
+                            </div>
+                            {% endif %}
+                            <div class="portfolio-content">
+                                <h5><a href="{{ item.get_absolute_url }}">{{ item.title }}</a></h5>
+                                <p>{{ item.description_from_content|truncatewords_html:5|safe }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.portfolio-item-wrapper -->
+                    {% endfor %}
+                </div>
+                <!-- /.caroufredsel-portfolio-container -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#recent-works -->
+    {% endif %}
+    {% if homepage.recent_blog_heading %}
+    <section id="blog-posts" class="section">
+        <div class="container">
+            <div class="wrapper-2">
+                {% editable homepage.recent_blog_heading %}
+                <h5 class="subpage-title">
+                    <span>{{ homepage.recent_blog_heading }}</span>
+                    <!-- Controls -->
+                    <span id="blog-posts-next" class="next black"><i class="fa fa-angle-right"></i></span>
+                    <span id="blog-posts-prev" class="prev black"><i class="fa fa-angle-left"></i></span>
+                </h5>
+                {% endeditable %}
+                <div class="row">
+                    <div id="caroufredsel-blog-posts-container">
+                        {% for blog_post in recent_posts %}
+                        <div class="col-xs-12 col-sm-6 col-md-4">
+                            <article class="post post-2">
+                                {% if blog_post.featured_video %}
+                                <div class="responsive-video-wrapper">
+                                    {{ blog_post.featured_video|safe }}
+                                </div>
+                                {% elif blog_post.featured_image %}
+                                <div class="post-thumb">
+                                    <a href="{{ blog_post.get_absolute_url }}"><img src="{{ MEDIA_URL }}{% thumbnail blog_post.featured_image 290 163 %}" class="img-responsive" alt="Responsive image"></a>
+                                </div>
+                                {% endif %}
+                                <!-- /.post-thumb -->
+                                <div class="post-content">
+                                    <h5 class="post-title"><a href="{{ blog_post.get_absolute_url }}">{{ blog_post.title }}</a></h5>
+                                </div>
+                                <!-- /.post-content -->
+                                <div class="post-meta">
+                                    <ul class="meta-list">
+                                        <li>
+                                            <span>Posted on</span>
+                                            <span class="black" >{{ blog_post.publish_date|date:"F j, Y" }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <!-- /.post-meta -->
+                            </article>
+                            <!-- /.post -->
+                        </div>
+                        <!-- /.col-md-4 -->
+                        {% endfor %}
+                    </div>
+                    <!-- /#caroufredsel-blog-posts-container -->
+                </div>
+                <!-- /.row -->
+            </div>
+            <!-- /.wrapper-2 -->
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#blog-posts -->
+    {% endif %}
+    {% if homepage.breakout_heading or homepage.breakout_content %}
+    <section id="awesome-callout" class="section colored-wrapper">
+        <div class="container">
+            {% editable homepage.breakout_heading homepage.breakout_content homepage.breakout_button_text homepage.breaktou_button_link %}
+            <div class="awesome-callout">
+                <h2>{{ homepage.breakout_heading }}</h2>
+                {{ homepage.breakout_content|richtext_filters|safe }}
+                <a href="{{ homepage.breakout_button_link }}" class="btn btn-flat flat-color btn-lg">{{ homepage.breakout_button_text }}</a>
+            </div>
+            {% endeditable %}
+            <!-- /.awesome-callout -->
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#awesome-callout -->
+    {% endif %}
+    {% if homepage.featured_gallery and homepage.featured_gallery_heading %}
+    <section id="our-clients" class="section">
+        <div class="container wrapper-1">
+            {% editable homepage.featured_gallery_heading homepage.featured_gallery %}
+            {% if request.user|can_view_help %}<span class="theme-help" data-toggle="tooltip" data-placement="top" data-trigger="manual" title="Click the edit tag or open the home page in the admin to select which gallery to show here"></span>{% endif %}
+
+            <h5 class="subpage-title">
+                <span>{{ homepage.featured_gallery_heading }}</span>
+                <!-- Controls -->
+                <span id="client-next" class="next"><i class="fa fa-angle-right"></i></span>
+                <span id="client-prev" class="prev"><i class="fa fa-angle-left"></i></span>
+            </h5>
+            {% endeditable %}
+            <div class="row">
+                <div id="caroufredsel-clients-container">
+                    {% for image in homepage.featured_gallery.images.all %}
+                    <div class="col-xs-12 col-sm-4 col-md-3 client-wrapper">
+                        <img class="img-responsive" src="{{ MEDIA_URL }}{% thumbnail image.file 412 222 %}" alt="Client Image">
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- /#caroufredsel-clients-container -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </section>
+    <!-- /#our-clients -->
+    {% endif %}
+{% endblock %}
